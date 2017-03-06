@@ -14,6 +14,8 @@
 		7959A7961E67F0D8000E2EDB /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 7959A7941E67F0D8000E2EDB /* LaunchScreen.storyboard */; };
 		7959A79F1E67F113000E2EDB /* SpriteKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 7959A79E1E67F113000E2EDB /* SpriteKit.framework */; };
 		7959A7A11E6ABBFA000E2EDB /* GameScene.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7959A7A01E6ABBFA000E2EDB /* GameScene.swift */; };
+		7959A7A71E6DA2E0000E2EDB /* powerup03.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 7959A7A61E6DA2E0000E2EDB /* powerup03.mp3 */; };
+		7959A7A91E6DA6D6000E2EDB /* damage1.mp3 in Resources */ = {isa = PBXBuildFile; fileRef = 7959A7A81E6DA6D6000E2EDB /* damage1.mp3 */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -26,6 +28,8 @@
 		7959A7971E67F0D8000E2EDB /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		7959A79E1E67F113000E2EDB /* SpriteKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SpriteKit.framework; path = System/Library/Frameworks/SpriteKit.framework; sourceTree = SDKROOT; };
 		7959A7A01E6ABBFA000E2EDB /* GameScene.swift */ = {isa = PBXFileReference; fileEncoding = 4; lastKnownFileType = sourcecode.swift; path = GameScene.swift; sourceTree = "<group>"; };
+		7959A7A61E6DA2E0000E2EDB /* powerup03.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = powerup03.mp3; sourceTree = "<group>"; };
+		7959A7A81E6DA6D6000E2EDB /* damage1.mp3 */ = {isa = PBXFileReference; lastKnownFileType = audio.mp3; path = damage1.mp3; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -60,10 +64,12 @@
 		7959A78A1E67F0D8000E2EDB /* FlappyBird */ = {
 			isa = PBXGroup;
 			children = (
+				7959A7A61E6DA2E0000E2EDB /* powerup03.mp3 */,
 				7959A78B1E67F0D8000E2EDB /* AppDelegate.swift */,
 				7959A78D1E67F0D8000E2EDB /* ViewController.swift */,
 				7959A78F1E67F0D8000E2EDB /* Main.storyboard */,
 				7959A7921E67F0D8000E2EDB /* Assets.xcassets */,
+				7959A7A81E6DA6D6000E2EDB /* damage1.mp3 */,
 				7959A7A01E6ABBFA000E2EDB /* GameScene.swift */,
 				7959A7941E67F0D8000E2EDB /* LaunchScreen.storyboard */,
 				7959A7971E67F0D8000E2EDB /* Info.plist */,
@@ -140,6 +146,8 @@
 			buildActionMask = 2147483647;
 			files = (
 				7959A7961E67F0D8000E2EDB /* LaunchScreen.storyboard in Resources */,
+				7959A7A71E6DA2E0000E2EDB /* powerup03.mp3 in Resources */,
+				7959A7A91E6DA6D6000E2EDB /* damage1.mp3 in Resources */,
 				7959A7931E67F0D8000E2EDB /* Assets.xcassets in Resources */,
 				7959A7911E67F0D8000E2EDB /* Main.storyboard in Resources */,
 			);

@@ -27,6 +27,7 @@ class ViewController: UIViewController {
         
         // ビューにシーンを表示する
         skView.presentScene(scene)
+        
     }
 
     override func didReceiveMemoryWarning() {
