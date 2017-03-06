@@ -13,11 +13,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     var scrollNode:SKNode!
     var wallNode:SKNode!
     var bird:SKSpriteNode!
+    var wormNode:SKNode!
+    
+    // アイテム用
+    var under_wall_y:CGFloat!
     
     // スコア用
     var score = 0
+    var itemScore = 0
     var scoreLabelNode:SKLabelNode!
     var bestScoreLabelNode:SKLabelNode!
+    var itemScoreLabelNode:SKLabelNode!
     let userDefaults:UserDefaults = UserDefaults.standard
     
     
@@ -26,6 +32,8 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     let groundCategory: UInt32 = 1 << 1     // 0...00010
     let wallCategory: UInt32 = 1 << 2       // 0...00100
     let scoreCategory: UInt32 = 1 << 3      // 0...01000
+    let itemScoreCategory: UInt32 = 1 << 4
+    
     
     
     // SKView上にシーンが表示された時に呼ばれるメソッド
@@ -46,11 +54,16 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         wallNode = SKNode()
         scrollNode.addChild(wallNode)
         
+        // アイテム用のノード
+        wormNode = SKNode()
+        scrollNode.addChild(wormNode)
+        
         // 各種スプライトを生成する処理をメソッドに分割
         setupGround()
         setupCloud()
         setupWall()
         setupBird()
+        setupItem()
         
         setupScoreLabel()
     }
@@ -69,6 +82,81 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         }
     }
     
+    func setupItem() {
+        // 画質優先でアイテムの画像を読み込む
+        let wormTexture = SKTexture(imageNamed: "worm")
+        wormTexture.filteringMode = SKTextureFilteringMode.linear
+        
+        // 移動する距離を計算
+        let movingDistance = CGFloat(self.frame.size.width + wormTexture.size().width)
+        
+        // 画面外まで移動するアクションを作成
+        let moveWorm = SKAction.moveBy(x: -movingDistance, y: 0, duration:4.0)
+    
+        // 自身を取り除くアクションを作成
+        let removeWorm = SKAction.removeFromParent()
+        
+        // 2つのアニメーションを順に実行するアクションを作成
+        let wormAnimation = SKAction.sequence([moveWorm, removeWorm])
+        
+        // アイテムを生成するアクションを作成
+        let createWormAnimation = SKAction.run({
+            let groundTexture = SKTexture(imageNamed: "ground")
+            let wallTexture = SKTexture(imageNamed: "wall")
+            let item = SKNode()
+            item.position = CGPoint(x: self.frame.size.width + wormTexture.size().width / 2, y: 0.0)
+            item.zPosition = 100.0 // 雲より手前、地面より奥
+            
+
+            // アイテムのY軸上限
+            let random_y_range = self.frame.size.height - (wallTexture.size().height / 2)
+            
+            // 1~random_y_rangeまでのランダムな整数を生成
+            let random_y = arc4random_uniform( UInt32(random_y_range) )
+
+            // アイテムのY軸下限
+            let worm_lowest_y:UInt32!
+                worm_lowest_y =  UInt32(groundTexture.size().height + (self.under_wall_y / 2))
+            
+            // Y軸の下限にランダムな値を足して、下の壁のY座標を決定
+            let worm_y = CGFloat(worm_lowest_y + random_y)
+            
+            // アイテムを作成
+            let worm = SKSpriteNode(texture: wormTexture)
+            worm.position = CGPoint(x: 0.0, y: worm_y)
+
+            item.addChild(worm)
+            
+            
+            // アイテムスコアアップ用のノード
+            let itemScoreNode = SKNode()
+            itemScoreNode.position = worm.position
+            itemScoreNode.physicsBody = SKPhysicsBody(rectangleOf: CGSize(width: worm.size.width, height: worm.size.height))
+            itemScoreNode.physicsBody?.isDynamic = false
+            itemScoreNode.physicsBody?.categoryBitMask = self.itemScoreCategory
+            itemScoreNode.physicsBody?.contactTestBitMask = self.birdCategory
+            
+            item.addChild(itemScoreNode)
+            
+            
+            
+            
+            item.run(wormAnimation)
+            self.wormNode.addChild(item)
+        })
+        
+        // 次のアイテム作成までの待ち時間のアクションを作成
+        let waitAnimation = SKAction.wait(forDuration: TimeInterval(arc4random_uniform(5)))
+        
+        // 無限リピート
+        let repeatForeverAnimation = SKAction.repeatForever(SKAction.sequence([createWormAnimation, waitAnimation]))
+        
+        wormNode.run(repeatForeverAnimation)
+        
+        
+    }
+    
+    
     func setupScoreLabel() {
         score = 0
         scoreLabelNode = SKLabelNode()
@@ -83,13 +171,22 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         bestScoreLabelNode = SKLabelNode()
         bestScoreLabelNode.fontColor = UIColor.black
         bestScoreLabelNode.position = CGPoint(x: 10, y: self.frame.size.height - 60)
-        
         bestScoreLabelNode.zPosition = 100      // 一番手前に表示する
         bestScoreLabelNode.horizontalAlignmentMode = SKLabelHorizontalAlignmentMode.left
         
         let bestScore = userDefaults.integer(forKey: "BEST")
         bestScoreLabelNode.text = "Best Score:\(bestScore)"
         self.addChild(bestScoreLabelNode)
+        
+        itemScore = 0
+        itemScoreLabelNode = SKLabelNode()
+        itemScoreLabelNode.fontColor = UIColor.black
+        itemScoreLabelNode.position = CGPoint(x: 10, y: self.frame.size.height - 90)
+        itemScoreLabelNode.zPosition = 100      // 一番手前に表示する
+        itemScoreLabelNode.horizontalAlignmentMode = SKLabelHorizontalAlignmentMode.left
+        
+        itemScoreLabelNode.text = "Item Score:\(itemScore)"
+        self.addChild(itemScoreLabelNode)
     }
 
     func setupBird() {
@@ -144,28 +241,30 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
         
         // 壁を生成するアクションを作成
         let createWallAnimation = SKAction.run({
-            // 壁関連のノードを乗せるノードを作成
+            // 壁関連のノードを作成
             let wall = SKNode()
             wall.position = CGPoint(x: self.frame.size.width + wallTexture.size().width / 2, y: 0.0)
             wall.zPosition = -50.0 // 雲より手前、地面より奥
             
             // 画面のY軸の中央値
             let center_y = self.frame.size.height / 2
-            // 壁のY座標を上下ランダムにさせる時の最大値
+            // 壁 Y座標のランダム値上限
             let random_y_range = self.frame.size.height / 4
-            // 下の壁のY軸の下限
+            // 下壁 Y軸の下限
             let under_wall_lowest_y = UInt32( center_y - wallTexture.size().height / 2 - random_y_range / 2)
             // 1~random_y_rangeまでのランダムな整数を生成
             let random_y = arc4random_uniform( UInt32(random_y_range) )
-            // Y軸の下限にランダムな値を足して、下の壁のY座標を決定
-            let under_wall_y = CGFloat(under_wall_lowest_y + random_y)
+            
+            // 下壁 Y座標を決定
+            self.under_wall_y = CGFloat(under_wall_lowest_y + random_y)
+            
             
             // キャラが通り抜ける隙間の長さ
             let slit_length = self.frame.size.height / 6
             
-            // 下側の壁を作成
+            // 下壁を作成
             let under = SKSpriteNode(texture: wallTexture)
-            under.position = CGPoint(x: 0.0, y: under_wall_y)
+            under.position = CGPoint(x: 0.0, y: self.under_wall_y)
             wall.addChild(under)
             
             // スプライトに物理演算を設定する
@@ -175,9 +274,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             // 衝突の時に動かないように設定する
             under.physicsBody?.isDynamic = false
             
-            // 上側の壁を作成
+            // 上壁を作成
             let upper = SKSpriteNode(texture: wallTexture)
-            upper.position = CGPoint(x: 0.0, y: under_wall_y + wallTexture.size().height + slit_length)
+            upper.position = CGPoint(x: 0.0, y: self.under_wall_y + wallTexture.size().height + slit_length)
             
             // スプライトに物理演算を設定する
             upper.physicsBody = SKPhysicsBody(rectangleOf: wallTexture.size())
@@ -203,15 +302,16 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
             self.wallNode.addChild(wall)
         })
         
-        // 次の壁作成までの待ち時間のアクション作成
+        // 次の壁作成までの待ち時間のアクションを作成
         let waitAnimation = SKAction.wait(forDuration: 2)
         
-        // 壁を作成 -> 待ち時間 -> 壁を作成を無限にくりかえるアクションを作成
+        // 壁を作成->待ち時間->壁を作成を無限に繰り替えるアクションを作成
         let repeatForeverAnimation = SKAction.repeatForever(SKAction.sequence([createWallAnimation, waitAnimation]))
         
         wallNode.run(repeatForeverAnimation)
     }
 
+    
     
     func setupGround() {
 
@@ -258,7 +358,7 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     
     func setupCloud() {
-        // 処理速度優先で地面の画像を読み込む
+        // 処理速度優先で雲の画像を読み込む
         let cloudTexture = SKTexture(imageNamed: "cloud")
         cloudTexture.filteringMode = SKTextureFilteringMode.nearest
         
@@ -314,6 +414,17 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
                 userDefaults.synchronize()
             }
             
+        } else if (contact.bodyA.categoryBitMask & itemScoreCategory) == itemScoreCategory || (contact.bodyB.categoryBitMask & itemScoreCategory) == itemScoreCategory  {
+
+            // アイテムスコア用の物体と衝突した
+            
+            print("ScoreUp")
+            itemScore += 1
+            itemScoreLabelNode.text = "Item Score:\(itemScore)"
+            SKAction.removeFromParent()
+
+
+            
         } else {
             // 壁か地面と衝突した
             print("GameOver")
@@ -332,7 +443,9 @@ class GameScene: SKScene, SKPhysicsContactDelegate {
     
     func restart() {
         score = 0
+        itemScore = 0
         scoreLabelNode.text = String("Score:\(score)")
+        itemScoreLabelNode.text = "Item Score:\(score)"
         
         bird.position = CGPoint(x: self.frame.size.width * 0.2, y:self.frame.size.height * 0.7)
         bird.physicsBody?.velocity = CGVector.zero
